@@ -1,26 +1,67 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { validateEmail, validatePassword } from "../components/validator";
-import { usePostAPI } from "../hooks/api";
+import { axiosInstance } from "../config/axios";
+import { useNavigate, Link } from "react-router-dom";
 
 const Register = () => {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
 
-    const { data, error, loading } = usePostAPI({
-        url: "http://localhost:8000/api/users/register",
-        reqBody: {
-            name,
-            email,
-            password,
-        },
-    });
+    const [passwordError, setPasswordError] = useState(false);
+    const [emailError, setEmailError] = useState(false);
+
+    const [data, setData] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
+
+    const navigate = useNavigate();
+
+    const validations = {
+        minLength: password.length >= 8,
+        lowercase: /[a-z]/.test(password),
+        uppercase: /[A-Z]/.test(password),
+        number: /\d/.test(password),
+        specialChar: /[@$!%*?&]/.test(password),
+        onlyAllowedChars: /^[A-Za-z\d@$!%*?&]+$/.test(password),
+    };
+
+    const postUser = async () => {
+        setIsLoading(true);
+        try {
+            const response = await axiosInstance.post("/users/register", { name, email, password });
+            setData(response.data);
+            localStorage.setItem("token", response.data.token);
+            navigate("/");
+        } catch (error) {
+            setError(error.response.data.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        validateEmail(email);
-        validatePassword(password);
+        if (validateEmail(email)) {
+            setEmailError(false);
+        } else {
+            setEmailError(true);
+            return;
+        }
+        if (validatePassword(password)) {
+            setPasswordError(false);
+        } else {
+            setPasswordError(true);
+            return;
+        }
+        postUser();
     };
+
+    useEffect(() => {
+        if (localStorage.getItem("token")) {
+            navigate("/");
+        }
+    });
 
     return (
         <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
@@ -29,7 +70,7 @@ const Register = () => {
             </div>
 
             <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-sm">
-                <form onSubmit={handleSubmit} method="POST" className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                         <label htmlFor="name" className="block text-sm/6 font-medium text-gray-900">
                             Full name
@@ -61,6 +102,7 @@ const Register = () => {
                                 type="email"
                                 required
                                 autoComplete="email"
+                                style={{ outline: emailError && "red 2px solid" }}
                                 className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                             />
                         </div>
@@ -81,8 +123,29 @@ const Register = () => {
                                 type="password"
                                 required
                                 autoComplete="current-password"
-                                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-gray-900 outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
+                                style={{ outline: passwordError && "red 2px solid" }}
+                                className="block w-full rounded-md bg-white px-3 py-1.5 text-base text-black outline-1 -outline-offset-1 outline-gray-300 placeholder:text-gray-400 focus:outline-2 focus:-outline-offset-2 focus:outline-indigo-600 sm:text-sm/6"
                             />
+                        </div>
+                        <div className="flex flex-col justify-start items-start bg-gray-200 p-2 border rounded-md mt-2">
+                            <p className={validations.minLength ? "text-green-600" : "text-black"}>
+                                Must be at least 8 characters long.
+                            </p>
+                            <p className={validations.lowercase ? "text-green-600" : "text-black"}>
+                                Must include at least one lowercase letter (a-z).
+                            </p>
+                            <p className={validations.uppercase ? "text-green-600" : "text-black"}>
+                                Must include at least one uppercase letter (A-Z).
+                            </p>
+                            <p className={validations.number ? "text-green-600" : "text-black"}>
+                                Must include at least one number (0-9).
+                            </p>
+                            <p className={validations.specialChar ? "text-green-600" : "text-black"}>
+                                Must include at least one special character (@$!%*?&).
+                            </p>
+                            <p className={validations.onlyAllowedChars ? "text-green-600" : "text-black"}>
+                                Cannot contain other special characters outside @$!%*?&.
+                            </p>
                         </div>
                     </div>
 
@@ -98,9 +161,9 @@ const Register = () => {
 
                 <p className="mt-10 text-center text-sm/6 text-gray-500">
                     Already a member?{" "}
-                    <a href="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
+                    <Link href="/login" className="font-semibold text-indigo-600 hover:text-indigo-500">
                         Login
-                    </a>
+                    </Link>
                 </p>
             </div>
         </div>

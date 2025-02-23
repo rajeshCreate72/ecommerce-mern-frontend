@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
-import { axiosInstance } from "../config/axios";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import React, { useEffect } from "react";
+import { createContext } from "react";
+import { axiosInstance } from "./axios";
 
-const ProtectedComponent = ({ children }) => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState("");
+export const AuthContext = createContext();
+
+const AuthProvider = ({ childern }) => {
+    const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const navigate = useNavigate();
+    const [isLoading, setIsLoading] = useState(true);
 
     const validateToken = async () => {
         setIsLoading(true);
@@ -22,8 +24,8 @@ const ProtectedComponent = ({ children }) => {
                 },
             });
             setIsAuthenticated(response.data.login);
+            setUser(response.data.userId);
         } catch (error) {
-            setError(error);
             setIsAuthenticated(false);
         } finally {
             setIsLoading(false);
@@ -32,12 +34,8 @@ const ProtectedComponent = ({ children }) => {
 
     useEffect(() => {
         validateToken();
-        if (!isAuthenticated) {
-            navigate("/login");
-        }
     }, []);
-
-    return <div>{isAuthenticated && children}</div>;
+    return <AuthProvider.Provider value={{ isAuthenticated, isLoading }}>{childern}</AuthProvider.Provider>;
 };
 
-export default ProtectedComponent;
+export default AuthContext;
