@@ -1,8 +1,11 @@
 import React from "react";
+import { AuthContext } from "../config/authContext";
+import { useContext } from "react";
 import { useInView } from "react-intersection-observer";
 
 const ProductCard = ({ product }) => {
     const { ref, inView } = useInView({ triggerOnce: true });
+    const { isAuthenticated } = useContext(AuthContext);
 
     return (
         <div ref={ref} className="h-auto w-64 bg-gray-100 rounded-lg shadow-lg p-4 my-4">
@@ -10,7 +13,7 @@ const ProductCard = ({ product }) => {
                 <div className="flex flex-col justify-between h-full">
                     <img src={product.image} alt={product.name} className="h-48 w-full object-cover rounded-lg" />
                     <section className=" inline-block w-40 ">{product.name}</section>
-                    <section>{product.price} USD</section>
+                    <section className="font-bold">{product.price} USD</section>
                     <button className="bg-blue-500 text-white px-4 py-2 rounded-lg">Add to Cart</button>
                 </div>
             ) : (

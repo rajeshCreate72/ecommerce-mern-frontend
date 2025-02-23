@@ -1,20 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { axiosInstance } from "../config/axios";
-import ProductCard from "../components/product-card";
 import { useNavigate } from "react-router-dom";
+import ProductCard from "../components/product-card";
+import Loading from "../components/Loading";
 
 const Home = () => {
-    const [response, setResponse] = useState(null);
-    const navigate = useNavigate();
-
+    const [error, setError] = useState(null);
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const navigate = useNavigate();
+
     const getProducts = async () => {
+        setIsLoading(true);
         try {
             const response = await axiosInstance.get("/users/get-products");
             setProducts(response.data);
         } catch (error) {
-            console.log(error);
+            setIsLoading(false);
+            setError(error.response.message);
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -22,16 +27,29 @@ const Home = () => {
         getProducts();
     }, []);
 
+    if (error) return <h1>{error}</h1>;
+
+    if (isLoading) return <Loading />;
+
     return (
-        <div>
+        <>
             <div className="flex flex-row justify-between items-center">
                 <h1>Products</h1>
                 <div>
-                    <button onClick={() => navigate("/cart")} className="text-white mx-4">
+                    <button onClick={() => (window.location.href = "/cart")} className="text-white mx-4">
                         Cart
                     </button>
-                    <button onClick={() => navigate("/orders")} className="text-white mx-4">
+                    <button onClick={() => (window.location.href = "/orders")} className="text-white mx-4">
                         Orders
+                    </button>
+                    <button
+                        onClick={() => {
+                            localStorage.removeItem("token");
+                            window.location.href = "/login";
+                        }}
+                        className="text-white mx-4"
+                    >
+                        Logout
                     </button>
                 </div>
             </div>
@@ -40,7 +58,7 @@ const Home = () => {
                     <ProductCard key={product._id} product={product} />
                 ))}
             </div>
-        </div>
+        </>
     );
 };
 

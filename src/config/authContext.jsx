@@ -1,11 +1,10 @@
-import React from "react";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { createContext } from "react";
 import { axiosInstance } from "./axios";
 
 export const AuthContext = createContext();
 
-const AuthProvider = ({ childern }) => {
+const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
@@ -16,6 +15,7 @@ const AuthProvider = ({ childern }) => {
             const token = localStorage.getItem("token");
             if (!token) {
                 setIsAuthenticated(false);
+                setIsLoading(false);
                 return;
             }
             const response = await axiosInstance.get("/users/authenticate", {
@@ -35,7 +35,7 @@ const AuthProvider = ({ childern }) => {
     useEffect(() => {
         validateToken();
     }, []);
-    return <AuthProvider.Provider value={{ isAuthenticated, isLoading }}>{childern}</AuthProvider.Provider>;
+    return <AuthContext.Provider value={{ isAuthenticated, isLoading, user }}>{children}</AuthContext.Provider>;
 };
 
-export default AuthContext;
+export default AuthProvider;
